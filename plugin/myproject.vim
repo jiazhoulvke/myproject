@@ -39,9 +39,13 @@ endif
 if !exists('g:MP_Write_AutoUpdate')
     let g:MP_Write_AutoUpdate = 0
 endif
-" 是否自动载入项目文件
+" 读入文件时是否自动载入项目文件
 if !exists('g:MP_Bufread_AutoLoad')
-    let g:MP_Bufread_AutoLoad = 0
+    let g:MP_Bufread_AutoLoad = 1
+endif
+" 载入buffer时是否自动载入项目文件
+if !exists('g:MP_BufEnter_AutoLoad')
+    let g:MP_BufEnter_AutoLoad = 0
 endif
 " 是否允许更新tags(适合临时设置禁用或启用)
 if !exists('g:MP_Update_Enable')
@@ -50,6 +54,15 @@ endif
 " 是否允许载入tags(适合临时设置禁用或启用)
 if !exists('g:MP_Load_Enable')
     let g:MP_Load_Enable = 1
+endif
+" 是否允许设置标题栏
+if !exists('g:MP_ConfigTitleBar_Enable')
+    let g:MP_ConfigTitleBar_Enable = 0
+endif
+" 标题栏字符串
+if !exists('g:MP_TitleString')
+    "titlestring的设置和statusline的设置差不多
+    let g:MP_TitleString="%t\ %m%r\ [%{expand(\"%:~:.:h\")}]\ [ProjectPath=%{g:MP_Cur_Prj}]\ -\ %{v:servername}"
 endif
 " 需要建立tags的文件后缀名(可以针对不同项目在各自的project.vim文件中定义)
 if !exists('g:MP_Source_File_Ext_Name')
@@ -198,6 +211,12 @@ else
 endif
 endfunction
 
+" 设置vim的标题栏
+if has("title")
+    if g:MP_ConfigTitleBar_Enable == 1
+        let &titlestring=g:MP_TitleString
+    endif
+endif
 " 载入项目
 command! -nargs=? MPLoad call <SID>MyProject_Load(<q-args>)
 " 更新项目tags
@@ -207,6 +226,10 @@ command! MPBuildTags call <SID>MyProject_Build_Tags()
 " 如果设置g:MP_Bufread_AutoLoad为1,则每次读取文件时自动载入所属项目的配置文件及tags
 if g:MP_Bufread_AutoLoad == 1
     autocmd! Bufread * MPLoad
+endif
+" 如果设置g:MP_BufEnter_AutoLoad为1,则每次切换缓冲区时自动载入所属项目的配置文件及tags
+if g:MP_BufEnter_AutoLoad == 1
+    autocmd! BufEnter * MPLoad
 endif
 " 如果设置g:MP_Write_AutoUpdate为1，则每次保存文件时自动更新tags
 if g:MP_Write_AutoUpdate == 1
