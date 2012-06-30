@@ -218,7 +218,7 @@ if has("title")
     endif
 endif
 " 载入项目
-command! -nargs=? MPLoad call <SID>MyProject_Load(<q-args>)
+command! -nargs=? -complete=file MPLoad call <SID>MyProject_Load(<q-args>)
 " 更新项目tags
 command! MPUpdateTags call <SID>MyProject_Update_Tags()
 " 建立项目tags
@@ -240,6 +240,6 @@ if !exists(":MPNERDTREE") && exists(":NERDTree")
     command! MPNERDTREE :exe 'NERDTree ' . g:MP_Cur_Prj
 endif
 " 在项目中搜索
-command! -nargs=* -complete=file MPSearchInProject call <SID>MyProject_Search_In_Project(<f-args>)
+command! -nargs=* -complete=tag MPSearchInProject call <SID>MyProject_Search_In_Project(<f-args>)
 
 " vim: ts=4 fdm=marker foldcolumn=1 ft=vim
