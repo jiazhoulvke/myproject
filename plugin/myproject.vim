@@ -118,7 +118,6 @@ if prjpath:
         if os.access(prjtags,os.F_OK):
             vim.command("set tags+=" + prjtags)
     if vim.eval("g:MP_Cscope_Enable")=='1':
-        #cscope不能添加已存在的cscope数据库，否则会报错,不过不影响使用,要避免错误显示，就在vimrc中加入“set nocscopeverbose”
         if os.access(prjncscope,os.F_OK):
             if vim.eval("cscope_connection(1,'ncscope.out')")==0:
                 vim.command("cs add " + prjncscope)
