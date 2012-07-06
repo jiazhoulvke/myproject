@@ -26,7 +26,7 @@ endif
 if !exists('g:MP_Cscope_Path')
     let g:MP_Cscope_Path = 'cscope'
 endif
-"设置grep的路径
+" 设置grep的路径
 " Tips: 如果是在windows下使用cygwin的grep的话，搜索结果中经常会出现警告，需要在系统中添加一个名叫CYGWIN，值为nodosfilewarning的环境变量
 if !exists('g:MP_Grep_Path')
     let g:MP_Grep_Path = 'grep'
@@ -120,9 +120,11 @@ if prjpath:
     if vim.eval("g:MP_Cscope_Enable")=='1':
         #cscope不能添加已存在的cscope数据库，否则会报错,不过不影响使用,要避免错误显示，就在vimrc中加入“set nocscopeverbose”
         if os.access(prjncscope,os.F_OK):
-            vim.command("cs add " + prjncscope)
+            if vim.eval("cscope_connection(1,'ncscope.out')")==0:
+                vim.command("cs add " + prjncscope)
         elif os.access(prjcscope,os.F_OK):
-            vim.command("cs add " + prjcscope)
+            if vim.eval("cscope_connection(1,'cscope.out')")==0:
+                vim.command("cs add " + prjcscope)
 EOA
 endfunction
 
