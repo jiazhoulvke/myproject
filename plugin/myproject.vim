@@ -118,12 +118,10 @@ if prjpath:
         if os.access(prjtags,os.F_OK):
             vim.command("set tags+=" + prjtags)
     if vim.eval("g:MP_Cscope_Enable")=='1':
-        if os.access(prjncscope,os.F_OK):
-            if vim.eval("cscope_connection(1,'ncscope.out')")==0:
-                vim.command("cs add " + prjncscope)
-        elif os.access(prjcscope,os.F_OK):
-            if vim.eval("cscope_connection(1,'cscope.out')")==0:
-                vim.command("cs add " + prjcscope)
+        if vim.eval("cscope_connection(1,'ncscope.out')")=='0' and os.access(prjncscope,os.F_OK):
+            vim.command("cs add " + prjncscope)
+        elif vim.eval("cscope_connection(1,'cscope.out')")=='0' and os.access(prjcscope,os.F_OK):
+            vim.command("cs add " + prjcscope)
 EOA
 endfunction
 
