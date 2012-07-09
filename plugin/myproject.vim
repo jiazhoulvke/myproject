@@ -136,15 +136,16 @@ if os.access(prjpath,os.F_OK):
     opath=os.getcwd()
     os.chdir(prjpath)
     if vim.eval("g:MP_Ctags_Enable") == '1':
-        os.popen(vim.eval("g:MP_Ctags_Path") + ' ' + vim.eval("g:MP_Ctags_Opt") + " -R . -f " + os.path.join(prjpath,'tags'))
+        os.popen(vim.eval("g:MP_Ctags_Path") + ' -f ' + os.path.join(prjpath,'tags') + vim.eval("g:MP_Ctags_Opt") + ' -R .')
     if vim.eval("g:MP_Cscope_Enable") == '1':
         extstr=vim.eval("g:MP_Source_File_Ext_Name")
         extlist=extstr.split(',')
         fstr=''
-        if vim.eval("has('win32') || has('win64')"):
+        if vim.eval("(has('win32') || has('win64'))")=='1':
             for i in extlist:
                 fstr=fstr + ' *.' + i + ' '
-            os.popen('dir /s /b ' + fstr + ' > cscope.files')
+            dirstr='dir /s /b ' + fstr + ' > cscope.files'
+            os.popen(dirstr)
         else:
             ffirst = True
             for i in extlist:
@@ -152,8 +153,9 @@ if os.access(prjpath,os.F_OK):
                     fstr=' -name ' + '"*.' + i + '" '
                     ffirst = False
                 else:
-                    fstr=fstr + ' -o -name ' + '"*.' + i + '" '
-            os.popen('find . ' + fstr + ' > cscope.files')
+                    fstr=fstr + ' -or -name ' + '"*.' + i + '" '
+            findstr='find . -type f -and \( ' + fstr + ' \) > cscope.files'
+            os.popen(findstr)
         os.popen(vim.eval("g:MP_Cscope_Path") + ' -b')
     os.chdir(opath)
 EOA
