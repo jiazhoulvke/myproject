@@ -5,10 +5,14 @@
 " Date:         2012-06-25
 " Version:      0.2
 "------------------------------------------------
+"if exists("g:MyProject_loaded")
+"    finish
+"endif
+"let g:MyProject_loaded=1
 
 " 项目文件名
-if !exists('g:MyProjectFileName')
-    let g:MyProjectFileName = 'project.vim'
+if !exists('g:MP_ProjectFile')
+    let g:MP_ProjectFile = 'project.vim'
 endif
 " 是否启用ctags
 if !exists('g:MP_Ctags_Enable')
@@ -47,6 +51,11 @@ endif
 if !exists('g:MP_BufEnter_AutoLoad')
     let g:MP_BufEnter_AutoLoad = 0
 endif
+" 每次自动载入项目时，是否允许重复载入,假如是通过命令直接指定项目路径这种方式则不会受影响,如
+"     :MPLoad  项目路径
+if !exists('g:MP_Project_AutoLoad_Override')
+    let g:MP_Project_AutoLoad_Override = 0
+endif
 " 是否允许更新tags(适合临时设置禁用或启用)
 if !exists('g:MP_Update_Enable')
     let g:MP_Update_Enable = 1
@@ -64,14 +73,40 @@ if !exists('g:MP_TitleString')
     "titlestring的设置和statusline的设置差不多
     let g:MP_TitleString="%t\ %m%r\ [%{expand(\"%:~:.:h\")}]\ [ProjectPath=%{g:MP_Cur_Prj}]\ -\ %{v:servername}"
 endif
-" 需要建立tags的文件后缀名(可以针对不同项目在各自的project.vim文件中定义)
+" 是否启用项目session
+if !exists("g:MP_Session_Enable")
+    let g:MP_Session_Enable = 1
+endif
+" 是否自动保存项目session
+if !exists("g:MP_Session_AutoSave")
+    let g:MP_Session_AutoSave = 1
+endif
+" 是否自动加载项目session
+if !exists("g:MP_Session_AutoLoad")
+    let g:MP_Session_AutoLoad = 1
+endif
+" 项目session文件名
+if !exists("g:MP_SessionFile")
+    let g:MP_SessionFile = 'project_session.vim'
+endif
+if !exists("MP_Session_Loaded")
+    let g:MP_Session_Loaded = 0
+endif
+" Session选项
+if !exists("g:MP_Session_Opt")
+    let g:MP_Session_Opt = "curdir,winpos,resize,buffers,winsize"
+endif
+" 需要建立tags的文件后缀名(可以针对不同项目在各自的project.vim文件中定义,如果为空则表示针对所有文件)
+" 如:
+" let g:MP_Source_File_Ext_Name = 'c,h,cpp'
 if !exists('g:MP_Source_File_Ext_Name')
-    let g:MP_Source_File_Ext_Name = 'c,h,cpp,vim,php,py'
+    let g:MP_Source_File_Ext_Name = ''
 endif
 " 项目路径
 if !exists('g:MP_Cur_Prj')
     let g:MP_Cur_Prj = ''
 endif
+
 python << EOA
 #coding=utf-8
 import vim,os
@@ -93,7 +128,7 @@ def get_myproject_path():
     curpath=os.getcwd()
     if vim.eval("expand('%')"):
         curpath=os.path.dirname(os.path.abspath(vim.eval("expand('%')")))
-    return up_find(curpath,vim.eval("g:MyProjectFileName"))
+    return up_find(curpath,vim.eval("g:MP_ProjectFile"))
 EOA
 
 " 载入项目配置文件及tags
@@ -101,16 +136,23 @@ function! <SID>MyProject_Load(projectpath)
 if g:MP_Load_Enable != 1
     return
 endif
+if isdirectory(g:MP_Cur_Prj) && g:MP_Project_AutoLoad_Override==0 && len(a:projectpath)<1
+    return
+endif
 python << EOA
 prjpath=''
 if vim.eval("a:projectpath"):
-    if os.access(os.path.join(vim.eval("a:projectpath"),vim.eval("g:MyProjectFileName")),os.F_OK):
+    if os.access(os.path.join(vim.eval("a:projectpath"),vim.eval("g:MP_ProjectFile")),os.F_OK):
         prjpath=vim.eval("a:projectpath")
 elif get_myproject_path():
         prjpath=get_myproject_path()
 if prjpath:
+    if vim.eval("g:MP_Session_AutoLoad")=='1' and vim.eval("g:MP_Session_Enable")=='1' and vim.eval("g:MP_Session_Loaded")=='0':
+        if os.access(os.path.join(prjpath,vim.eval("g:MP_SessionFile")),os.F_OK):
+            vim.command("source " + os.path.join(prjpath,vim.eval("g:MP_SessionFile")))
+            vim.command("let g:MP_Session_Loaded=1")
     vim.command("let g:MP_Cur_Prj='" + prjpath + "'")
-    vim.command("source " + os.path.join(prjpath,vim.eval("g:MyProjectFileName")))
+    vim.command("source " + os.path.join(prjpath,vim.eval("g:MP_ProjectFile")))
     prjtags=os.path.join(prjpath,'tags')
     prjcscope=os.path.join(prjpath,'cscope.out')
     prjncscope=os.path.join(prjpath,'ncscope.out')
@@ -212,6 +254,36 @@ else
 endif
 endfunction
 
+" 载入session
+function! <SID>MyProject_LoadSession(sessionfile)
+    if len(a:sessionfile)>0
+        let mpsessionfile=g:MP_Cur_Prj . '/' . a:sessionfile
+    else
+        let mpsessionfile=g:MP_Cur_Prj . '/' . g:MP_SessionFile
+    endif
+    if filereadable(mpsessionfile)
+        exe "source " . mpsessionfile
+    endif
+endfunction
+
+" 保存session
+function! <SID>MyProject_SaveSession(sessionfile)
+    if !isdirectory(g:MP_Cur_Prj)
+        return
+    endif
+    if len(a:sessionfile)>0
+        let mpsessionfile=g:MP_Cur_Prj . '/' . a:sessionfile
+    else
+        let mpsessionfile=g:MP_Cur_Prj . '/' . g:MP_SessionFile
+    endif
+    if filereadable(mpsessionfile)
+        let oldsessionopt=&sessionoptions
+        let &sessionoptions=g:MP_Session_Opt
+        exe "mksession! " . mpsessionfile
+        let &sessionoptions=oldsessionopt
+    endif
+endfunction
+
 " 设置vim的标题栏
 if has("title")
     if g:MP_ConfigTitleBar_Enable == 1
@@ -236,11 +308,17 @@ endif
 if g:MP_Write_AutoUpdate == 1
     autocmd! BufWritePost * call <SID>MyProject_Update_Tags()
 endif
+" 如果设置g:MP_Session_AutoSave为1,则关闭vim时自动保存项目session
+if g:MP_Session_AutoSave == 1 && g:MP_Session_Enable == 1
+    autocmd! VimLeave * MPSaveSession
+endif
 " 如果安装了NERDTREE插件，则可以通过MPNERDTREE在NERDTree中打开项目
 if !exists(":MPNERDTREE") && exists(":NERDTree")
     command! MPNERDTREE :exe 'NERDTree ' . g:MP_Cur_Prj
 endif
 " 在项目中搜索
 command! -nargs=* -complete=tag MPSearchInProject call <SID>MyProject_Search_In_Project(<f-args>)
+command! -nargs=? -complete=file MPSaveSession call <SID>MyProject_SaveSession(<q-args>)
+command! -nargs=? -complete=file MPLoadSession call <SID>MyProject_LoadSession(<q-args>)
 
 " vim: ts=4 fdm=marker foldcolumn=1 ft=vim
