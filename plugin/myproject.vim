@@ -269,6 +269,7 @@ endfunction
 " 保存session
 function! <SID>MyProject_SaveSession(sessionfile)
     if !isdirectory(g:MP_Cur_Prj)
+        echo 'not folder'
         return
     endif
     if len(a:sessionfile)>0
@@ -276,12 +277,10 @@ function! <SID>MyProject_SaveSession(sessionfile)
     else
         let mpsessionfile=g:MP_Cur_Prj . '/' . g:MP_SessionFile
     endif
-    if filereadable(mpsessionfile)
-        let oldsessionopt=&sessionoptions
-        let &sessionoptions=g:MP_Session_Opt
-        exe "mksession! " . mpsessionfile
-        let &sessionoptions=oldsessionopt
-    endif
+    let oldsessionopt=&sessionoptions
+    let &sessionoptions=g:MP_Session_Opt
+    exe "mksession! " . mpsessionfile
+    let &sessionoptions=oldsessionopt
 endfunction
 
 " 设置vim的标题栏
@@ -318,7 +317,9 @@ if !exists(":MPNERDTREE") && exists(":NERDTree")
 endif
 " 在项目中搜索
 command! -nargs=* -complete=tag MPSearchInProject call <SID>MyProject_Search_In_Project(<f-args>)
+" 保存当前项目的Session
 command! -nargs=? -complete=file MPSaveSession call <SID>MyProject_SaveSession(<q-args>)
+" 载入当前项目的Session
 command! -nargs=? -complete=file MPLoadSession call <SID>MyProject_LoadSession(<q-args>)
 
 " vim: ts=4 fdm=marker foldcolumn=1 ft=vim
