@@ -79,16 +79,17 @@ if !exists("g:MP_Session_Enable")
 endif
 " 是否自动保存项目session
 if !exists("g:MP_Session_AutoSave")
-    let g:MP_Session_AutoSave = 1
+    let g:MP_Session_AutoSave = 0
 endif
 " 是否自动加载项目session
 if !exists("g:MP_Session_AutoLoad")
-    let g:MP_Session_AutoLoad = 1
+    let g:MP_Session_AutoLoad = 0
 endif
 " 项目session文件名
 if !exists("g:MP_SessionFile")
     let g:MP_SessionFile = 'project_session.vim'
 endif
+" 项目是否已载入
 if !exists("MP_Session_Loaded")
     let g:MP_Session_Loaded = 0
 endif
@@ -276,12 +277,10 @@ function! <SID>MyProject_SaveSession(sessionfile)
     else
         let mpsessionfile=g:MP_Cur_Prj . '/' . g:MP_SessionFile
     endif
-    if filereadable(mpsessionfile)
-        let oldsessionopt=&sessionoptions
-        let &sessionoptions=g:MP_Session_Opt
-        exe "mksession! " . mpsessionfile
-        let &sessionoptions=oldsessionopt
-    endif
+    let oldsessionopt=&sessionoptions
+    let &sessionoptions=g:MP_Session_Opt
+    exe "mksession! " . mpsessionfile
+    let &sessionoptions=oldsessionopt
 endfunction
 
 " 设置vim的标题栏
@@ -318,7 +317,9 @@ if !exists(":MPNERDTREE") && exists(":NERDTree")
 endif
 " 在项目中搜索
 command! -nargs=* -complete=tag MPSearchInProject call <SID>MyProject_Search_In_Project(<f-args>)
+" 保存当前项目的Session
 command! -nargs=? -complete=file MPSaveSession call <SID>MyProject_SaveSession(<q-args>)
+" 载入当前项目的Session
 command! -nargs=? -complete=file MPLoadSession call <SID>MyProject_LoadSession(<q-args>)
 
 " vim: ts=4 fdm=marker foldcolumn=1 ft=vim
