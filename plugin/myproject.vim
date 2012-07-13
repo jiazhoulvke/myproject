@@ -270,6 +270,7 @@ endfunction
 " 保存session
 function! <SID>MyProject_SaveSession(sessionfile)
     if !isdirectory(g:MP_Cur_Prj)
+        echo 'not folder'
         return
     endif
     if len(a:sessionfile)>0
