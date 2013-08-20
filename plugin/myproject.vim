@@ -153,6 +153,7 @@ if prjpath:
             vim.command("source " + os.path.join(prjpath,vim.eval("g:MP_SessionFile")))
             vim.command("let g:MP_Session_Loaded=1")
     vim.command("let g:MP_Cur_Prj='" + prjpath + "'")
+    vim.command("cd " + prjpath)
     vim.command("source " + os.path.join(prjpath,vim.eval("g:MP_ProjectFile")))
     prjtags=os.path.join(prjpath,'tags')
     prjcscope=os.path.join(prjpath,'cscope.out')
