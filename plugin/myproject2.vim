@@ -295,6 +295,13 @@ command! MPBuildTags call <SID>MyProject_Build_Tags()
 " 更新Tags
 command! MPUpdateTags call <SID>MyProject_Update_Tags()
 
+" 保存Session
+command! -nargs=? -complete=file MPSaveSession call <SID>MyProject_SaveSession(<q-args>)
+
+" 载入Session
+command! -nargs=? -complete=file MPLoadSession call <SID>MyProject_LoadSession(<q-args>)
+
+
 "------------------------------------------------
 " Other:  其他{{{1
 "------------------------------------------------
