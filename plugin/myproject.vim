@@ -1,327 +1,477 @@
-" myproject.vim: 一个简单的项目管理插件，还是个半成品，目前实现了自动加载、更新项目tags等功能
-" Author:       jiazhoulvke
+" myproject.vim: 项目管理插件。有项目管理、Session管理、tags管理等功能
+" Author:       加州旅客
 " Email:        jiazhoulvke@gmail.com
-" Blog:         http://jiazhoulvke.com
+" Blog:         http://www.jiazhoulvke.com
 " Date:         2012-06-25
-" Version:      0.2
+" Update:       2014-01-22
+" Version:      0.3
 "------------------------------------------------
-"if exists("g:MyProject_loaded")
+
+"if exists('g:MP_Loaded')
 "    finish
 "endif
-"let g:MyProject_loaded=1
+"let g:MP_Loaded = 1
+
+"------------------------------------------------
+" Config: 配置选项 {{{1
+"------------------------------------------------
+
+if has('win32') || has('win64')
+    let g:MP_Separator = '\'
+else
+    let g:MP_Separator = '/'
+endif
+
+" 项目列表文件
+if !exists('g:MP_ProjectList')
+    let g:MP_ProjectList = $HOME.'/.MP_ProjectList.vim'
+endif
 
 " 项目文件名
 if !exists('g:MP_ProjectFile')
     let g:MP_ProjectFile = 'project.vim'
 endif
+
+" 项目列表高度
+if !exists('g:MP_Window_Height')
+    let g:MP_Window_Height = '10'
+endif
+
+" 选择项目后是否自动关闭项目列表
+if !exists('g:MP_Auto_Close')
+    let g:MP_Auto_Close = 0
+endif
+
 " 是否启用ctags
 if !exists('g:MP_Ctags_Enable')
-    let g:MP_Ctags_Enable = 1
+    let g:MP_Ctags_Enable = 0
 endif
-" 是否启用cscope
-if !exists('g:MP_Cscope_Enable')
-    let g:MP_Cscope_Enable = 1
-endif
+
 " 定义ctags的路径
 if !exists('g:MP_Ctags_Path')
     let g:MP_Ctags_Path = 'ctags'
 endif
+
+" 定义ctags参数
+if !exists('g:MP_Ctags_Opt')
+    let g:MP_Ctags_Opt = ''
+endif
+
+" 是否启用GNU global
+if !exists('g:MP_Global_Enable')
+    let g:MP_Global_Enable = 0
+endif
+
+" 定义GNU Global的路径
+if !exists('g:MP_Global_Path')
+    let g:MP_Global_Path = 'global'
+endif
+
+" 定义gtags的路径
+if !exists('g:MP_Gtags_Path')
+    let g:MP_Gtags_Path = 'gtags'
+endif
+
+" 是否启用cscope
+if !exists('g:MP_Cscope_Enable')
+    let g:MP_Cscope_Enable = 0
+endif
+
 " 定义cscope的路径
 if !exists('g:MP_Cscope_Path')
     let g:MP_Cscope_Path = 'cscope'
 endif
-" 设置grep的路径
-" Tips: 如果是在windows下使用cygwin的grep的话，搜索结果中经常会出现警告，需要在系统中添加一个名叫CYGWIN，值为nodosfilewarning的环境变量
-if !exists('g:MP_Grep_Path')
-    let g:MP_Grep_Path = 'grep'
+
+" 需要建立tags的文件后缀名,如:'c,h,cpp'
+if !exists('g:MP_Source_File_Ext_Name')
+    let g:MP_Source_File_Ext_Name = ''
 endif
-" 定义ctags参数,比如c++项目可以在project.vim中定义"--c++-kinds=+px"
-if !exists('g:MP_Ctags_Opt')
-    let g:MP_Ctags_Opt = ''
-endif
-" 在文件写入时是否自动更新tags
-if !exists('g:MP_Write_AutoUpdate')
-    let g:MP_Write_AutoUpdate = 0
-endif
-" 读入文件时是否自动载入项目文件
-if !exists('g:MP_Bufread_AutoLoad')
-    let g:MP_Bufread_AutoLoad = 1
-endif
-" 载入buffer时是否自动载入项目文件
-if !exists('g:MP_BufEnter_AutoLoad')
-    let g:MP_BufEnter_AutoLoad = 0
-endif
-" 每次自动载入项目时，是否允许重复载入,假如是通过命令直接指定项目路径这种方式则不会受影响,如
-"     :MPLoad  项目路径
-if !exists('g:MP_Project_AutoLoad_Override')
-    let g:MP_Project_AutoLoad_Override = 0
-endif
-" 是否允许更新tags(适合临时设置禁用或启用)
-if !exists('g:MP_Update_Enable')
-    let g:MP_Update_Enable = 1
-endif
-" 是否允许载入tags(适合临时设置禁用或启用)
-if !exists('g:MP_Load_Enable')
-    let g:MP_Load_Enable = 1
-endif
+
 " 是否允许设置标题栏
 if !exists('g:MP_ConfigTitleBar_Enable')
     let g:MP_ConfigTitleBar_Enable = 0
 endif
+
 " 标题栏字符串
 if !exists('g:MP_TitleString')
-    "titlestring的设置和statusline的设置差不多
     let g:MP_TitleString="%t\ %m%r\ [%{expand(\"%:~:.:h\")}]\ [ProjectPath=%{g:MP_Cur_Prj}]\ -\ %{v:servername}"
 endif
-" 是否启用项目session
-if !exists("g:MP_Session_Enable")
-    let g:MP_Session_Enable = 1
-endif
+
 " 是否自动保存项目session
 if !exists("g:MP_Session_AutoSave")
     let g:MP_Session_AutoSave = 0
 endif
+
 " 是否自动加载项目session
 if !exists("g:MP_Session_AutoLoad")
     let g:MP_Session_AutoLoad = 0
 endif
-" 项目session文件名
+
+" 项目默认session文件名
 if !exists("g:MP_SessionFile")
-    let g:MP_SessionFile = 'project_session.vim'
+    let g:MP_SessionFile = 'project.session.vim'
 endif
-" 项目是否已载入
-if !exists("MP_Session_Loaded")
-    let g:MP_Session_Loaded = 0
-endif
+
 " Session选项
 if !exists("g:MP_Session_Opt")
-    let g:MP_Session_Opt = "curdir,winpos,resize,buffers,winsize"
+    let g:MP_Session_Opt = "blank,buffers,curdir,folds,globals,options,resize,tabpages,winpos,winsize"
 endif
-" 需要建立tags的文件后缀名(可以针对不同项目在各自的project.vim文件中定义,如果为空则表示针对所有文件)
-" 如:
-" let g:MP_Source_File_Ext_Name = 'c,h,cpp'
-if !exists('g:MP_Source_File_Ext_Name')
-    let g:MP_Source_File_Ext_Name = ''
-endif
+
 " 项目路径
-if !exists('g:MP_Cur_Prj')
-    let g:MP_Cur_Prj = ''
+if !exists('g:MP_Path')
+    let g:MP_Path = ''
 endif
 
-python << EOA
-#coding=utf-8
-import vim,os
-
-# 向上查找指定文件，如果找到则返回目录路径
-def up_find(path,filename):
-    returnpath=''
-    cpath=os.path.abspath(path)
-    while cpath!=os.path.dirname(cpath):
-        mpfn=os.path.join(cpath,filename)
-        if os.access(mpfn,os.F_OK):
-            returnpath=cpath
-            break
-        cpath=os.path.dirname(cpath)
-    return returnpath
-
-# 向上查找项目路径
-def get_myproject_path():
-    curpath=os.getcwd()
-    if vim.eval("expand('%')"):
-        curpath=os.path.dirname(os.path.abspath(vim.eval("expand('%')")))
-    return up_find(curpath,vim.eval("g:MP_ProjectFile"))
-EOA
-
-" 载入项目配置文件及tags
-function! <SID>MyProject_Load(projectpath)
-if g:MP_Load_Enable != 1
-    return
+" 在文件写入时是否自动更新tags
+if !exists('g:MP_Write_AutoUpdate')
+    let g:MP_Write_AutoUpdate = 0
 endif
-if isdirectory(g:MP_Cur_Prj) && g:MP_Project_AutoLoad_Override==0 && len(a:projectpath)<1
-    return
+
+" 读入文件时是否自动载入项目文件
+if !exists('g:MP_Bufread_AutoLoad')
+    let g:MP_Bufread_AutoLoad = 0
 endif
-python << EOA
-prjpath=''
-if vim.eval("a:projectpath"):
-    if os.access(os.path.join(vim.eval("a:projectpath"),vim.eval("g:MP_ProjectFile")),os.F_OK):
-        prjpath=vim.eval("a:projectpath")
-elif get_myproject_path():
-        prjpath=get_myproject_path()
-if prjpath:
-    if vim.eval("g:MP_Session_AutoLoad")=='1' and vim.eval("g:MP_Session_Enable")=='1' and vim.eval("g:MP_Session_Loaded")=='0':
-        if os.access(os.path.join(prjpath,vim.eval("g:MP_SessionFile")),os.F_OK):
-            vim.command("source " + os.path.join(prjpath,vim.eval("g:MP_SessionFile")))
-            vim.command("let g:MP_Session_Loaded=1")
-    vim.command("let g:MP_Cur_Prj='" + prjpath + "'")
-    vim.command("cd " + prjpath)
-    vim.command("source " + os.path.join(prjpath,vim.eval("g:MP_ProjectFile")))
-    prjtags=os.path.join(prjpath,'tags')
-    prjcscope=os.path.join(prjpath,'cscope.out')
-    prjncscope=os.path.join(prjpath,'ncscope.out')
-    if vim.eval("g:MP_Ctags_Enable")=='1':
-        if os.access(prjtags,os.F_OK):
-            vim.command("set tags+=" + prjtags)
-    if vim.eval("g:MP_Cscope_Enable")=='1':
-        if vim.eval("cscope_connection(1,'ncscope.out')")=='0' and os.access(prjncscope,os.F_OK):
-            vim.command("cs add " + prjncscope)
-        elif vim.eval("cscope_connection(1,'cscope.out')")=='0' and os.access(prjcscope,os.F_OK):
-            vim.command("cs add " + prjcscope)
-EOA
+
+let s:bname = '__MyProject_List__'
+
+"------------------------------------------------
+" Functions:  函数{{{1
+"------------------------------------------------
+
+" 创建项目 {{{2
+function! <SID>MyProject_CreateProject()
+    let newproject = {}
+    let newproject['path'] = input("输入项目路径: ", '', 'dir')
+    if !isdirectory(newproject['path'])
+        let c = inputlist(["\n" . newproject['path'] . '不存在，需要创建吗?',"1.Yes","2.No"])
+        echo "\n"
+        if c == 1
+            let r = mkdir(newproject['path'])
+        else
+            return
+        endif
+    endif
+    let newproject['name'] = input("输入项目名称: ")
+    echo "\n"
+    let projectfile = newproject['path'] . g:MP_Separator . g:MP_ProjectFile
+    echo projectfile
+    let l = []
+    call add(l,'" 项目名称: ' . newproject['name'])
+    if writefile(l, projectfile) != 0
+        echo '创建项目文件失败'
+        return
+    endif
+    if filereadable(g:MP_ProjectList)
+        let projectlist = readfile(g:MP_ProjectList)
+        call add(projectlist, string(newproject))
+    else
+        let projectlist = [string(newproject)]
+    endif
+    if writefile(projectlist, g:MP_ProjectList) == 0
+        echo "项目创建成功!\n"
+        echo "项目名称: " . newproject['name'] . "\n"
+        echo "项目路径: " . newproject['path'] . "\n"
+    else
+        echo "项目创建失败"
+    endif
 endfunction
 
-" 建立项目tags
+" 载入项目 {{{2
+function! <SID>MyProject_Load(...)
+    if a:0== 0
+        let s:projectfilepath = findfile(g:MP_ProjectFile,'.;')
+    else
+        let s:projectfilepath = findfile(g:MP_ProjectFile,a:1.';')
+    endif
+    if s:projectfilepath == ''
+        return
+    endif
+    if s:projectfilepath == g:MP_ProjectFile
+        let g:MP_Path = getcwd()
+    else
+        let g:MP_Path = strpart(s:projectfilepath, 0, strridx(s:projectfilepath, g:MP_Separator))
+    endif
+    " 载入项目配置
+    exe 'so ' . s:projectfilepath
+    unlet s:projectfilepath
+    exe 'cd ' . g:MP_Path
+    " 载入session
+    if g:MP_Session_AutoSave == 1
+        if filereadable(g:MP_Path . g:MP_Separator . g:MP_SessionFile)
+            exe 'so ' . g:MP_Path . g:MP_Separator . g:MP_SessionFile
+        endif
+    endif
+    " 载入ctags
+    if g:MP_Ctags_Enable == 1
+        exe 'set tags+=' . g:MP_Path . g:MP_Separator . 'tags'
+    endif
+    " 载入global
+    if g:MP_Global_Enable == 1
+        let s:prjgtags = g:MP_Path . g:MP_Separator . 'GTAGS'
+        if filereadable(s:prjgtags)
+            exe 'cs add ' . s:prjgtags
+        endif
+        unlet s:prjgtags
+    " 载入cscope
+    elseif g:MP_Cscope_Enable == 1
+        let s:prjcscope = g:MP_Path . g:MP_Separator . 'cscope.out'
+        let s:prjncscope = g:MP_Path . g:MP_Separator . 'ncscope.out'
+        if cscope_connection(1,'ncscope.out') == 0 && filereadable(s:prjncscope)
+            exe 'cs add ' . s:prjncscope
+        elseif cscope_connection(1,'cscope.out') == 0 && filereadable(s:prjcscope)
+            exe 'cs add ' . s:prjcscope
+        endif
+        unlet s:prjcscope
+        unlet s:prjncscope
+    endif
+endfunction
+
+" 项目列表 {{{2
+function! <SID>MyProject_List()
+    if !filereadable(g:MP_ProjectList)
+        return
+    endif
+    let tlist = readfile(g:MP_ProjectList)
+    let s:projectlist = []
+    let showlist = []
+    for line in tlist
+        let p = eval(line)
+        call add(s:projectlist, p)
+        call add(showlist, printf("[%s] %s", p['name'], p['path']))
+    endfor
+    let winnum = bufwinnr(s:bname)
+    if winnum != -1
+        if winnr() != winnum
+            exe winnum . 'wincmd w'
+        endif
+        setlocal modifiable
+        silent! %delete _
+    else
+        let bufnum = bufnr(s:bname)
+        if bufnum == -1
+            let wcmd = s:bname
+        else
+            let wcmd = '+buffer' . bufnum
+        endif
+        exe 'silent! botright ' . g:MP_Window_Height . 'split ' . wcmd
+    endif
+    setlocal buftype=nofile
+    setlocal noswapfile
+    setlocal nowrap
+    setlocal nobuflisted
+    setlocal winfixheight
+    setlocal modifiable
+    silent! %delete _
+    call setline(1, showlist)
+    normal! gg
+    setlocal nomodifiable
+    call <SID>MyProject_Key_Map()
+endfunction
+
+" 按键绑定 {{{2
+function! <SID>MyProject_Key_Map()
+    nmap <buffer> <CR> :call <SID>MyProject_Project_Load()<CR>
+    nmap <buffer> q :close<CR>
+    nmap <buffer> d :call <SID>MyProject_Project_Delete()<CR>
+    nmap <buffer> <ESC> :close<CR>
+    nmap <buffer> c :MPCreate<CR>
+endfunction
+
+" 通过项目列表载入项目 {{{2
+function! <SID>MyProject_Project_Load()
+    let ln = line('.')
+    let project = s:projectlist[ln-1]
+    call <SID>MyProject_Load(project['path'])
+    if g:MP_Auto_Close == 1
+        exe ':close'
+    endif
+endfunction
+
+" 从项目列表中删除项目 {{{2
+function! <SID>MyProject_Project_Delete()
+    let ln = line('.')
+    let c = inputlist(["确定要删除此项目吗?","1.Yes","2.No"])
+    echo "\n"
+    if c != 1
+        return
+    endif
+    call remove(s:projectlist, ln-1)
+    setlocal modifiable
+    normal! dd
+    setlocal nomodifiable
+    let tlist = []
+    for p in s:projectlist
+        call add(tlist, string(p))
+    endfor
+    call writefile(tlist, g:MP_ProjectList)
+endfunction
+
+" MPLoad命令补全函数 {{{2
+function! <SID>MyProject_MPLoad_Complete(A,L,P)
+    if !filereadable(g:MP_ProjectList)
+        return
+    endif
+    let tlist = readfile(g:MP_ProjectList)
+    let resultlist = []
+    for line in tlist
+        let p = eval(line)
+        call add(resultlist, p['path'])
+    endfor
+    return resultlist
+endfunction
+
+" 建立项目tags {{{2
 function! <SID>MyProject_Build_Tags()
-python << EOA
-if vim.eval('g:MP_Cur_Prj'):
-    prjpath=vim.eval("g:MP_Cur_Prj")
-elif get_myproject_path():
-    prjpath=get_myproject_path()
-if os.access(prjpath,os.F_OK):
-    opath=os.getcwd()
-    os.chdir(prjpath)
-    if vim.eval("g:MP_Ctags_Enable") == '1':
-        os.popen(vim.eval("g:MP_Ctags_Path") + ' -f ' + os.path.join(prjpath,'tags') + vim.eval("g:MP_Ctags_Opt") + ' -R .')
-    if vim.eval("g:MP_Cscope_Enable") == '1':
-        extstr=vim.eval("g:MP_Source_File_Ext_Name")
-        extlist=extstr.split(',')
-        fstr=''
-        if vim.eval("(has('win32') || has('win64'))")=='1':
-            for i in extlist:
-                fstr=fstr + ' *.' + i + ' '
-            dirstr='dir /s /b ' + fstr + ' > cscope.files'
-            os.popen(dirstr)
-        else:
-            ffirst = True
-            for i in extlist:
-                if ffirst:
-                    fstr=' -name ' + '"*.' + i + '" '
-                    ffirst = False
-                else:
-                    fstr=fstr + ' -or -name ' + '"*.' + i + '" '
-            findstr='find . -type f -and \( ' + fstr + ' \) > cscope.files'
-            os.popen(findstr)
-        os.popen(vim.eval("g:MP_Cscope_Path") + ' -b')
-    os.chdir(opath)
-EOA
+    if !isdirectory(g:MP_Path)
+        return
+    endif
+    let s:opath = getcwd()
+    exe 'cd ' . g:MP_Path
+    if g:MP_Ctags_Enable == 1
+        echo '开始生成tags'
+        exe '!' . g:MP_Ctags_Path . ' -f ' . g:MP_Path . g:MP_Separator . 'tags' . g:MP_Ctags_Opt . ' -R . '
+    endif
+    if strlen(g:MP_Source_File_Ext_Name) > 0
+        let s:extlist = split(g:MP_Source_File_Ext_Name, ',')
+        let s:fstr = ''
+        if has('win32') || has('win64')
+            for s:ext in s:extlist
+                let s:fstr = s:fstr . ' *.' . s:ext . ' '
+            endfor
+            if g:MP_Global_Enable == 1
+                exe '!dir /s /b ' . s:fstr . ' > gtags.files'
+            elseif g:MP_Cscope_Enable ==1
+                exe '!dir /s /b ' . s:fstr . ' > cscope.files'
+            endif
+        else
+            let s:flist = []
+            for s:ext in s:extlist
+                call add(s:flist, ' -name "*.' . s:ext . '" ')
+            endfor
+            if g:MP_Global_Enable == 1
+                exe '!find . -type f -and \(' . join(s:flist, ' -or ') . '\) > gtags.files'
+            elseif g:MP_Cscope_Enable ==1
+                exe '!find . -type f -and \(' . join(s:flist, ' -or ') . '\) > cscope.files'
+            endif
+        endif
+    endif
+    if g:MP_Global_Enable == 1
+        exe '!' . g:MP_Gtags_Path
+    elseif g:MP_Cscope_Enable == 1
+        exe '!' . g:MP_Cscope_Path . ' -b'
+    endif
+    exe 'cd ' . s:opath
+    unlet s:fstr
+    unlet s:flist
+    unlet s:extlist
+    unlet s:opath
 endfunction
 
-" 更新项目tags
+" 更新项目tags {{{2
 function! <SID>MyProject_Update_Tags()
-if g:MP_Update_Enable != 1
-    return
-endif
-let l:curbufpath=expand('%:p')
-python << EOA
-if vim.eval("g:MP_Cur_Prj"):
-    prjpath=vim.eval("g:MP_Cur_Prj")
-elif get_myproject_path():
-    prjpath=get_myproject_path()
-if os.access(prjpath,os.F_OK):
-    opath=os.getcwd()
-    os.chdir(prjpath)
-    if vim.eval("g:MP_Ctags_Enable")=='1':
-        os.popen(vim.eval("g:MP_Ctags_Path") + ' ' + vim.eval("g:MP_Ctags_Opt") + ' -a -f ' + os.path.join(prjpath,'tags') + ' ' + vim.eval("l:curbufpath"))
-    if vim.eval("g:MP_Cscope_Enable")=='1':
-        os.popen(vim.eval("g:MP_Cscope_Path") + " -b")
-    os.chdir(opath)
-EOA
-endfunction
-
-" 在项目中搜索
-function! <SID>MyProject_Search_In_Project(...)
-if !isdirectory(g:MP_Cur_Prj)
-    return
-endif
-if a:0 > 0
-    let search_pattern = a:000[0]
-else
-    let temp_input = input("要查找的字符串: ")
-    if strlen(temp_input) < 1
-        return
-    else
-        let search_pattern = temp_input
-    endif
-endif
-if executable(g:MP_Grep_Path)
-    let old_grepprg = &grepprg
-    exe 'set grepprg=' . g:MP_Grep_Path
-    exe ':grep -s -i -I -n -R ' . search_pattern . ' ' . g:MP_Cur_Prj
-    let &grepprg = old_grepprg
-else
-    if a:0 > 1
-        exe ':vimgrep ' . search_pattern . ' ' . join(map(split(a:000[1],','),'g:MP_Cur_Prj . "/**/*." . v:val'),' ')
-    else
-        exe ':vimgrep ' . search_pattern . ' ' . g:MP_Cur_Prj . '/**/*.*'
-    endif
-endif
-endfunction
-
-" 载入session
-function! <SID>MyProject_LoadSession(sessionfile)
-    if len(a:sessionfile)>0
-        let mpsessionfile=g:MP_Cur_Prj . '/' . a:sessionfile
-    else
-        let mpsessionfile=g:MP_Cur_Prj . '/' . g:MP_SessionFile
-    endif
-    if filereadable(mpsessionfile)
-        exe "source " . mpsessionfile
-    endif
-endfunction
-
-" 保存session
-function! <SID>MyProject_SaveSession(sessionfile)
-    if !isdirectory(g:MP_Cur_Prj)
-        echo 'not folder'
+    if !isdirectory(g:MP_Path)
         return
     endif
-    if len(a:sessionfile)>0
-        let mpsessionfile=g:MP_Cur_Prj . '/' . a:sessionfile
-    else
-        let mpsessionfile=g:MP_Cur_Prj . '/' . g:MP_SessionFile
+    let s:opath = getcwd()
+    exe 'cd ' . g:MP_Path
+    if g:MP_Ctags_Enable == 1
+        exe '!' . g:MP_Ctags_Path . ' ' . g:MP_Ctags_Opt . ' -a -f ' . expand('%:p')
     endif
-    let oldsessionopt=&sessionoptions
-    let &sessionoptions=g:MP_Session_Opt
-    exe "mksession! " . mpsessionfile
-    let &sessionoptions=oldsessionopt
+    if g:MP_Global_Enable == 1
+        exe '!' . g:MP_Global_Path . ' -u'
+    elseif g:MP_Cscope_Enable == 1
+        exe '!' . g:MP_Cscope_Path . ' -b'
+    endif
+    exe 'cd ' . s:opath
+    unlet s:opath
 endfunction
 
-" 设置vim的标题栏
-if has("title")
-    if g:MP_ConfigTitleBar_Enable == 1
-        let &titlestring=g:MP_TitleString
+" 保存session {{{2
+function! <SID>MyProject_SaveSession(...)
+    if !isdirectory(g:MP_Path)
+        return
     endif
-endif
-" 载入项目
-command! -nargs=? -complete=file MPLoad call <SID>MyProject_Load(<q-args>)
-" 更新项目tags
-command! MPUpdateTags call <SID>MyProject_Update_Tags()
-" 建立项目tags
-command! MPBuildTags call <SID>MyProject_Build_Tags()
-" 如果设置g:MP_Bufread_AutoLoad为1,则每次读取文件时自动载入所属项目的配置文件及tags
+    if a:0 == 0
+        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_SessionFile
+    else
+        let s:mpsessionfile = g:MP_Path . g:MP_Separator . a:1 . '.session.vim'
+    endif
+    let s:oldsessionopt = &sessionoptions
+    let &sessionoptions = g:MP_Session_Opt
+    exe "mksession! " . s:mpsessionfile
+    let &sessionoptions = s:oldsessionopt
+endfunction
+
+" 载入session {{{2
+function! <SID>MyProject_LoadSession(...)
+    if !isdirectory(g:MP_Path)
+        return
+    endif
+    if a:0 == 0
+        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_SessionFile
+    else
+        let s:mpsessionfile = g:MP_Path . g:MP_Separator . a:1 . '.session.vim'
+    endif
+    if filereadable(s:mpsessionfile)
+        exe 'so ' . s:mpsessionfile
+    endif
+endfunction
+
+"------------------------------------------------
+" Autocmd:  自动命令{{{1
+"------------------------------------------------
+
+" 读入文件时自动载入项目
 if g:MP_Bufread_AutoLoad == 1
     autocmd! Bufread * MPLoad
 endif
-" 如果设置g:MP_BufEnter_AutoLoad为1,则每次切换缓冲区时自动载入所属项目的配置文件及tags
-if g:MP_BufEnter_AutoLoad == 1
-    autocmd! BufEnter * MPLoad
-endif
-" 如果设置g:MP_Write_AutoUpdate为1，则每次保存文件时自动更新tags
+
+" 保存时自动更新tags
 if g:MP_Write_AutoUpdate == 1
     autocmd! BufWritePost * call <SID>MyProject_Update_Tags()
 endif
-" 如果设置g:MP_Session_AutoSave为1,则关闭vim时自动保存项目session
-if g:MP_Session_AutoSave == 1 && g:MP_Session_Enable == 1
+
+" 关闭vim时自动保存项目的session
+if g:MP_Session_AutoSave == 1
     autocmd! VimLeave * MPSaveSession
 endif
-" 如果安装了NERDTREE插件，则可以通过MPNERDTREE在NERDTree中打开项目
-if !exists(":MPNERDTREE") && exists(":NERDTree")
-    command! MPNERDTREE :exe 'NERDTree ' . g:MP_Cur_Prj
-endif
-" 在项目中搜索
-command! -nargs=* -complete=tag MPSearchInProject call <SID>MyProject_Search_In_Project(<f-args>)
-" 保存当前项目的Session
+
+"------------------------------------------------
+" Command:  命令{{{1
+"------------------------------------------------
+
+" 创建项目
+command! MPCreate call <SID>MyProject_CreateProject()
+
+" 项目列表
+command! MPList call <SID>MyProject_List()
+
+" 载入项目
+command! -nargs=? -complete=customlist,<SID>MyProject_MPLoad_Complete MPLoad call <SID>MyProject_Load(<q-args>)
+
+" 建立Tags
+command! MPBuildTags call <SID>MyProject_Build_Tags()
+
+" 更新Tags
+command! MPUpdateTags call <SID>MyProject_Update_Tags()
+
+" 保存Session
 command! -nargs=? -complete=file MPSaveSession call <SID>MyProject_SaveSession(<q-args>)
-" 载入当前项目的Session
+
+" 载入Session
 command! -nargs=? -complete=file MPLoadSession call <SID>MyProject_LoadSession(<q-args>)
 
-" vim: ts=4 fdm=marker foldcolumn=1 ft=vim
+
+"------------------------------------------------
+" Other:  其他{{{1
+"------------------------------------------------
+
+"设置vim的标题栏
+if has('title')
+    if g:MP_ConfigTitleBar_Enable == 1
+        let g:oldtitlstring = &titlestring
+        let &titlestring = g:MP_TitleString
+    endif
+endif
+
+" vim: ts=4 wrap fdm=marker foldcolumn=1 filetype=vim
