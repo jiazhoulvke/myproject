@@ -190,6 +190,10 @@ function! <SID>MyProject_Load(...)
         let g:MP_Path = getcwd()
     else
         let g:MP_Path = strpart(s:projectfilepath, 0, strridx(s:projectfilepath, g:MP_Separator))
+        " 用findfile获取的路径有时是相对路径,所以要做一下处理
+        exe 'cd ' . g:MP_Path
+        let g:MP_Path = getcwd()
+        let s:projectfilepath = g:MP_Path . g:MP_Separator . g:MP_ProjectFile
     endif
     " 载入项目配置
     exe 'so ' . s:projectfilepath
