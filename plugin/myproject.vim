@@ -94,7 +94,7 @@ endif
 
 " 标题栏字符串
 if !exists('g:MP_TitleString')
-    let g:MP_TitleString="%t\ %m%r\ [%{expand(\"%:~:.:h\")}]\ [ProjectPath=%{g:MP_Cur_Prj}]\ -\ %{v:servername}"
+    let g:MP_TitleString="%t\ %m%r\ [%{expand(\"%:~:.:h\")}]\ [ProjectPath=%{g:MP_Path}]\ -\ %{v:servername}"
 endif
 
 " 是否自动保存项目session
