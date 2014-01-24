@@ -197,7 +197,6 @@ function! <SID>MyProject_Load(...)
     endif
     " 载入项目配置
     exe 'so ' . s:projectfilepath
-    unlet s:projectfilepath
     exe 'cd ' . g:MP_Path
     " 载入session
     if g:MP_Session_AutoSave == 1
@@ -215,7 +214,6 @@ function! <SID>MyProject_Load(...)
         if filereadable(s:prjgtags)
             exe 'cs add ' . s:prjgtags
         endif
-        unlet s:prjgtags
     " 载入cscope
     elseif g:MP_Cscope_Enable == 1
         let s:prjcscope = g:MP_Path . g:MP_Separator . 'cscope.out'
@@ -225,8 +223,6 @@ function! <SID>MyProject_Load(...)
         elseif cscope_connection(1,'cscope.out') == 0 && filereadable(s:prjcscope)
             exe 'cs add ' . s:prjcscope
         endif
-        unlet s:prjcscope
-        unlet s:prjncscope
     endif
 endfunction
 
@@ -324,12 +320,26 @@ function! <SID>MyProject_MPLoad_Complete(A,L,P)
     return resultlist
 endfunction
 
+" MPSessionLoad命令补全函数 {{{2
+function! <SID>MyProject_MPSessionLoad_Complete(A,L,P)
+    if !isdirectory(g:MP_Path)
+        return
+    endif
+    let opath = getcwd()
+    exe 'cd ' . g:MP_Path
+    let sessions = glob('*.session.vim')
+    let sessions = substitute(sessions, '.session.vim', '', 'g')
+    let sessionlist = split(sessions, "\n")
+    exe 'cd ' . opath
+    return sessionlist
+endfunction
+
 " 建立项目tags {{{2
 function! <SID>MyProject_Build_Tags()
     if !isdirectory(g:MP_Path)
         return
     endif
-    let s:opath = getcwd()
+    let opath = getcwd()
     exe 'cd ' . g:MP_Path
     if g:MP_Ctags_Enable == 1
         echo '开始生成tags'
@@ -364,11 +374,7 @@ function! <SID>MyProject_Build_Tags()
     elseif g:MP_Cscope_Enable == 1
         exe '!' . g:MP_Cscope_Path . ' -b'
     endif
-    exe 'cd ' . s:opath
-    unlet s:fstr
-    unlet s:flist
-    unlet s:extlist
-    unlet s:opath
+    exe 'cd ' . opath
 endfunction
 
 " 更新项目tags {{{2
@@ -376,7 +382,7 @@ function! <SID>MyProject_Update_Tags()
     if !isdirectory(g:MP_Path)
         return
     endif
-    let s:opath = getcwd()
+    let opath = getcwd()
     exe 'cd ' . g:MP_Path
     if g:MP_Ctags_Enable == 1
         exe '!' . g:MP_Ctags_Path . ' ' . g:MP_Ctags_Opt . ' -a -f ' . expand('%:p')
@@ -386,12 +392,11 @@ function! <SID>MyProject_Update_Tags()
     elseif g:MP_Cscope_Enable == 1
         exe '!' . g:MP_Cscope_Path . ' -b'
     endif
-    exe 'cd ' . s:opath
-    unlet s:opath
+    exe 'cd ' . opath
 endfunction
 
 " 保存session {{{2
-function! <SID>MyProject_SaveSession(...)
+function! <SID>MyProject_SessionSave(...)
     if !isdirectory(g:MP_Path)
         return
     endif
@@ -407,7 +412,7 @@ function! <SID>MyProject_SaveSession(...)
 endfunction
 
 " 载入session {{{2
-function! <SID>MyProject_LoadSession(...)
+function! <SID>MyProject_SessionLoad(...)
     if !isdirectory(g:MP_Path)
         return
     endif
@@ -448,7 +453,7 @@ endif
 command! MPCreate call <SID>MyProject_CreateProject()
 
 " 项目列表
-command! MPList call <SID>MyProject_List()
+command! MPProjectList call <SID>MyProject_List()
 
 " 载入项目
 command! -nargs=? -complete=customlist,<SID>MyProject_MPLoad_Complete MPLoad call <SID>MyProject_Load(<q-args>)
@@ -460,10 +465,10 @@ command! MPBuildTags call <SID>MyProject_Build_Tags()
 command! MPUpdateTags call <SID>MyProject_Update_Tags()
 
 " 保存Session
-command! -nargs=? -complete=file MPSaveSession call <SID>MyProject_SaveSession(<q-args>)
+command! -nargs=? -complete=file MPSessionSave call <SID>MyProject_SessionSave(<q-args>)
 
 " 载入Session
-command! -nargs=? -complete=file MPLoadSession call <SID>MyProject_LoadSession(<q-args>)
+command! -nargs=? -complete=customlist,<SID>MyProject_MPSessionLoad_Complete MPSessionLoad call <SID>MyProject_SessionLoad(<q-args>)
 
 
 "------------------------------------------------
