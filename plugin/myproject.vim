@@ -211,8 +211,6 @@ function! <SID>MyProject_Load(...)
             exe 'so ' . g:MP_Path . g:MP_Separator . g:MP_DefaultSessionName . '.session.vim'
         endif
     endif
-    echo g:MP_Session_AutoLoad
-    echo g:MP_Session_AutoSave
     " 载入ctags
     if g:MP_Ctags_Enable == 1
         exe 'set tags+=' . g:MP_Path . g:MP_Separator . 'tags'
@@ -438,13 +436,14 @@ endfunction
 " 读入文件时自动载入项目
 function! <SID>MyProject_Project_AutoLoad()
     let path = expand('%:p:h')
+    echo path
     call <SID>MyProject_Load(path)
 endfunction
 
 " 自动保存session {{{2
 function! <SID>MyProject_Session_AutoSave()
     if g:MP_Session_AutoSave == 1
-        call <SID>MyProject_SessionSave()
+        call <SID>MyProject_SessionSave('')
     endif
 endfunction
 
