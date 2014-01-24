@@ -108,8 +108,8 @@ if !exists("g:MP_Session_AutoLoad")
 endif
 
 " 项目默认session文件名
-if !exists("g:MP_SessionFile")
-    let g:MP_SessionFile = 'default'
+if !exists("g:MP_DefaultSessionName")
+    let g:MP_DefaultSessionName = 'default'
 endif
 
 " Session选项
@@ -178,7 +178,7 @@ endfunction
 
 " 载入项目 {{{2
 function! <SID>MyProject_Load(...)
-    if a:0== 0
+    if a:1 == ''
         let s:projectfilepath = findfile(g:MP_ProjectFile,'.;')
     else
         let s:projectfilepath = findfile(g:MP_ProjectFile,a:1.';')
@@ -200,8 +200,8 @@ function! <SID>MyProject_Load(...)
     exe 'cd ' . g:MP_Path
     " 载入session
     if g:MP_Session_AutoSave == 1
-        if filereadable(g:MP_Path . g:MP_Separator . g:MP_SessionFile)
-            exe 'so ' . g:MP_Path . g:MP_Separator . g:MP_SessionFile
+        if filereadable(g:MP_Path . g:MP_Separator . g:MP_DefaultSessionName . '.session.vim')
+            exe 'so ' . g:MP_Path . g:MP_Separator . g:MP_DefaultSessionName . '.session.vim'
         endif
     endif
     " 载入ctags
@@ -320,8 +320,8 @@ function! <SID>MyProject_MPLoad_Complete(A,L,P)
     return resultlist
 endfunction
 
-" MPSessionLoad命令补全函数 {{{2
-function! <SID>MyProject_MPSessionLoad_Complete(A,L,P)
+" MPSessionLoad和MPSessionSave命令补全函数 {{{2
+function! <SID>MyProject_Session_Complete(A,L,P)
     if !isdirectory(g:MP_Path)
         return
     endif
@@ -400,11 +400,12 @@ function! <SID>MyProject_SessionSave(...)
     if !isdirectory(g:MP_Path)
         return
     endif
-    if a:0 == 0
-        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_SessionFile . '.session.vim'
+    if a:1 == ''
+        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_DefaultSessionName . '.session.vim'
     else
         let s:mpsessionfile = g:MP_Path . g:MP_Separator . a:1 . '.session.vim'
     endif
+    echo s:mpsessionfile
     let s:oldsessionopt = &sessionoptions
     let &sessionoptions = g:MP_Session_Opt
     exe "mksession! " . s:mpsessionfile
@@ -416,8 +417,8 @@ function! <SID>MyProject_SessionLoad(...)
     if !isdirectory(g:MP_Path)
         return
     endif
-    if a:0 == 0
-        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_SessionFile . '.session.vim'
+    if a:1 == ''
+        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_DefaultSessionName . '.session.vim'
     else
         let s:mpsessionfile = g:MP_Path . g:MP_Separator . a:1 . '.session.vim'
     endif
@@ -442,7 +443,7 @@ endif
 
 " 关闭vim时自动保存项目的session
 if g:MP_Session_AutoSave == 1
-    autocmd! VimLeave * MPSaveSession
+    autocmd! VimLeave * MPSessionSave
 endif
 
 "------------------------------------------------
@@ -465,10 +466,10 @@ command! MPBuildTags call <SID>MyProject_Build_Tags()
 command! MPUpdateTags call <SID>MyProject_Update_Tags()
 
 " 保存Session
-command! -nargs=? -complete=file MPSessionSave call <SID>MyProject_SessionSave(<q-args>)
+command! -nargs=? -complete=customlist,<SID>MyProject_Session_Complete MPSessionSave call <SID>MyProject_SessionSave(<q-args>)
 
 " 载入Session
-command! -nargs=? -complete=customlist,<SID>MyProject_MPSessionLoad_Complete MPSessionLoad call <SID>MyProject_SessionLoad(<q-args>)
+command! -nargs=? -complete=customlist,<SID>MyProject_Session_Complete MPSessionLoad call <SID>MyProject_SessionLoad(<q-args>)
 
 
 "------------------------------------------------
