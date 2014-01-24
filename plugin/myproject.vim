@@ -436,7 +436,6 @@ endfunction
 " 读入文件时自动载入项目
 function! <SID>MyProject_Project_AutoLoad()
     let path = expand('%:p:h')
-    echo path
     call <SID>MyProject_Load(path)
 endfunction
 
