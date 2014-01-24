@@ -39,7 +39,7 @@ endif
 
 " 选择项目后是否自动关闭项目列表
 if !exists('g:MP_Auto_Close')
-    let g:MP_Auto_Close = 0
+    let g:MP_Auto_Close = 1
 endif
 
 " 是否启用ctags
@@ -154,7 +154,6 @@ function! <SID>MyProject_CreateProject()
     let newproject['name'] = input("输入项目名称: ")
     echo "\n"
     let projectfile = newproject['path'] . g:MP_Separator . g:MP_ProjectFile
-    echo projectfile
     let l = []
     call add(l,'" 项目名称: ' . newproject['name'])
     if writefile(l, projectfile) != 0
@@ -181,7 +180,15 @@ function! <SID>MyProject_Load(...)
     if a:1 == ''
         let s:projectfilepath = findfile(g:MP_ProjectFile,'.;')
     else
-        let s:projectfilepath = findfile(g:MP_ProjectFile,a:1.';')
+        if isdirectory(a:1)
+            let path = a:1
+        else
+            let path = strpart(a:1, 0, strridx(a:1, g:MP_Separator))
+            if !isdirectory(path)
+                return
+            endif
+        endif
+        let s:projectfilepath = findfile(g:MP_ProjectFile,path.';')
     endif
     if s:projectfilepath == ''
         return
@@ -199,11 +206,13 @@ function! <SID>MyProject_Load(...)
     exe 'so ' . s:projectfilepath
     exe 'cd ' . g:MP_Path
     " 载入session
-    if g:MP_Session_AutoSave == 1
+    if g:MP_Session_AutoLoad == 1
         if filereadable(g:MP_Path . g:MP_Separator . g:MP_DefaultSessionName . '.session.vim')
             exe 'so ' . g:MP_Path . g:MP_Separator . g:MP_DefaultSessionName . '.session.vim'
         endif
     endif
+    echo g:MP_Session_AutoLoad
+    echo g:MP_Session_AutoSave
     " 载入ctags
     if g:MP_Ctags_Enable == 1
         exe 'set tags+=' . g:MP_Path . g:MP_Separator . 'tags'
@@ -405,7 +414,6 @@ function! <SID>MyProject_SessionSave(...)
     else
         let s:mpsessionfile = g:MP_Path . g:MP_Separator . a:1 . '.session.vim'
     endif
-    echo s:mpsessionfile
     let s:oldsessionopt = &sessionoptions
     let &sessionoptions = g:MP_Session_Opt
     exe "mksession! " . s:mpsessionfile
@@ -427,24 +435,40 @@ function! <SID>MyProject_SessionLoad(...)
     endif
 endfunction
 
+" 读入文件时自动载入项目
+function! <SID>MyProject_Project_AutoLoad()
+    let path = expand('%:p:h')
+    call <SID>MyProject_Load(path)
+endfunction
+
+" 自动保存session {{{2
+function! <SID>MyProject_Session_AutoSave()
+    if g:MP_Session_AutoSave == 1
+        call <SID>MyProject_SessionSave()
+    endif
+endfunction
+
+" 保存时自动更新tags
+function! <SID>MyProject_Auto_Update_Tags()
+    if g:MP_Write_AutoUpdate == 1
+        call <SID>MyProject_Update_Tags()
+    endif
+endfunction
+
 "------------------------------------------------
 " Autocmd:  自动命令{{{1
 "------------------------------------------------
 
 " 读入文件时自动载入项目
 if g:MP_Bufread_AutoLoad == 1
-    autocmd! Bufread * MPLoad
+    autocmd! Bufread * call <SID>MyProject_Project_AutoLoad()
 endif
 
 " 保存时自动更新tags
-if g:MP_Write_AutoUpdate == 1
-    autocmd! BufWritePost * call <SID>MyProject_Update_Tags()
-endif
+autocmd! BufWritePost * call <SID>MyProject_Auto_Update_Tags()
 
 " 关闭vim时自动保存项目的session
-if g:MP_Session_AutoSave == 1
-    autocmd! VimLeave * MPSessionSave
-endif
+autocmd! VimLeave * call <SID>MyProject_Session_AutoSave()
 
 "------------------------------------------------
 " Command:  命令{{{1
