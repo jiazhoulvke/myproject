@@ -139,7 +139,7 @@ let s:bname = '__MyProject_List__'
 "------------------------------------------------
 
 " 创建项目 {{{2
-function! <SID>MyProject_CreateProject()
+function! <SID>MyProject_CreateProject(...)
     let newproject = {}
     let newproject['path'] = input("输入项目路径: ", '', 'dir')
     if !isdirectory(newproject['path'])
@@ -156,8 +156,56 @@ function! <SID>MyProject_CreateProject()
     let projectfile = newproject['path'] . g:MP_Separator . g:MP_ProjectFile
     let l = []
     call add(l,'" 项目名称: ' . newproject['name'])
+    if a:1 == 'template'
+        call add(l,'"let g:MP_Ctags_Enable = 1')
+        call add(l,'"let g:MP_Global_Enable = 1')
+        call add(l,'"set cscopeprg=gtags-cscope')
+        call add(l,'"let g:MP_Cscope_Enable = 1')
+        call add(l,'"let g:MP_Session_AutoSave = 1')
+        call add(l,'"let g:MP_Session_AutoLoad = 1')
+        call add(l,'"let g:MP_Write_AutoUpdate = 1')
+        call add(l,'"let g:MP_Source_File_Ext_Name = ""')
+    endif
+    if a:1 == 'question'
+        let c = inputlist(["\n是否使用ctags?","1.Yes","2.No"])
+        echo "\n"
+        if c == 1
+            call add(l,'let g:MP_Ctags_Enable = 1')
+        endif
+        let c = inputlist(["\n是否使用gnu global?","1.Yes","2.No"])
+        echo "\n"
+        if c == 1
+            call add(l,'let g:MP_Global_Enable = 1')
+            call add(l,'set cscopeprg=gtags-cscope')
+        else
+            let c = inputlist(["\n是否使用cscope?","1.Yes","2.No"])
+            echo "\n"
+            if c == 1
+                call add(l,'let g:MP_Cscope_Enable = 1')
+            endif
+        endif
+        let c = inputlist(["\n关闭vim时是否自动保存session?","1.Yes","2.No"])
+        echo "\n"
+        if c == 1
+            call add(l,'let g:MP_Session_AutoSave = 1')
+        endif
+        let c = inputlist(["\n载入项目时是否自动载入默认session?","1.Yes","2.No"])
+        echo "\n"
+        if c == 1
+            call add(l,'let g:MP_Session_AutoLoad = 1')
+        endif
+        let c = inputlist(["\n写入文件时是否自动更新tags?","1.Yes","2.No"])
+        echo "\n"
+        if c == 1
+            call add(l,'let g:MP_Write_AutoUpdate = 1')
+        endif
+        let file_ext_name = input("\n请输入该项目源代码的后缀名，用英文逗号分隔。(如： c,h): ")
+        if strlen(file_ext_name) > 0
+            call add(l,"let g:MP_Source_File_Ext_Name = '".file_ext_name."'")
+        endif
+    endif
     if writefile(l, projectfile) != 0
-        echo '创建项目文件失败'
+        echo "\n创建项目文件失败\n"
         return
     endif
     if filereadable(g:MP_ProjectList)
@@ -167,11 +215,9 @@ function! <SID>MyProject_CreateProject()
         let projectlist = [string(newproject)]
     endif
     if writefile(projectlist, g:MP_ProjectList) == 0
-        echo "项目创建成功!\n"
-        echo "项目名称: " . newproject['name'] . "\n"
-        echo "项目路径: " . newproject['path'] . "\n"
+        echo "\n项目创建成功\n"
     else
-        echo "项目创建失败"
+        echo "\n项目创建失败\n"
     endif
 endfunction
 
@@ -282,6 +328,7 @@ function! <SID>MyProject_Key_Map()
     nmap <buffer> d :call <SID>MyProject_Project_Delete()<CR>
     nmap <buffer> <ESC> :close<CR>
     nmap <buffer> c :MPCreate<CR>
+    nmap <buffer> C :MPCreate all<CR>
 endfunction
 
 " 通过项目列表载入项目 {{{2
@@ -341,6 +388,11 @@ function! <SID>MyProject_Session_Complete(A,L,P)
     return sessionlist
 endfunction
 
+" MPCreate命令补全函数 {{{2
+function! <SID>MyProject_MPCreate_Complete(A,L,P)
+    return ['template', 'question']
+endfunction
+
 " 建立项目tags {{{2
 function! <SID>MyProject_Build_Tags()
     if !isdirectory(g:MP_Path)
@@ -361,7 +413,7 @@ function! <SID>MyProject_Build_Tags()
             endfor
             if g:MP_Global_Enable == 1
                 exe '!dir /s /b ' . s:fstr . ' > gtags.files'
-            elseif g:MP_Cscope_Enable ==1
+            elseif g:MP_Cscope_Enable == 1
                 exe '!dir /s /b ' . s:fstr . ' > cscope.files'
             endif
         else
@@ -371,8 +423,18 @@ function! <SID>MyProject_Build_Tags()
             endfor
             if g:MP_Global_Enable == 1
                 exe '!find . -type f -and \(' . join(s:flist, ' -or ') . '\) > gtags.files'
-            elseif g:MP_Cscope_Enable ==1
+            elseif g:MP_Cscope_Enable == 1
                 exe '!find . -type f -and \(' . join(s:flist, ' -or ') . '\) > cscope.files'
+            endif
+        endif
+    else
+        if has('win32') || has('win64')
+            if g:MP_Cscope_Enable == 1
+                exe '!dir /s /b > cscope.files' 
+            endif
+        else
+            if g:MP_Cscope_Enable == 1
+                exe '!find . -type f > cscope.files'
             endif
         endif
     endif
@@ -473,7 +535,7 @@ autocmd! VimLeave * call <SID>MyProject_Session_AutoSave()
 "------------------------------------------------
 
 " 创建项目
-command! MPCreate call <SID>MyProject_CreateProject()
+command! -nargs=? -complete=customlist,<SID>MyProject_MPCreate_Complete MPCreate call <SID>MyProject_CreateProject(<q-args>)
 
 " 项目列表
 command! MPProjectList call <SID>MyProject_List()
