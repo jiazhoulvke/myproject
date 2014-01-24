@@ -24,7 +24,7 @@ endif
 
 " 项目列表文件
 if !exists('g:MP_ProjectList')
-    let g:MP_ProjectList = $HOME.'/.MP_ProjectList.vim'
+    let g:MP_ProjectList = globpath($HOME, '.MP_ProjectList.vim')
 endif
 
 " 项目文件名
@@ -109,7 +109,7 @@ endif
 
 " 项目默认session文件名
 if !exists("g:MP_SessionFile")
-    let g:MP_SessionFile = 'project.session.vim'
+    let g:MP_SessionFile = 'default'
 endif
 
 " Session选项
@@ -401,7 +401,7 @@ function! <SID>MyProject_SessionSave(...)
         return
     endif
     if a:0 == 0
-        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_SessionFile
+        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_SessionFile . '.session.vim'
     else
         let s:mpsessionfile = g:MP_Path . g:MP_Separator . a:1 . '.session.vim'
     endif
@@ -417,7 +417,7 @@ function! <SID>MyProject_SessionLoad(...)
         return
     endif
     if a:0 == 0
-        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_SessionFile
+        let s:mpsessionfile = g:MP_Path . g:MP_Separator . g:MP_SessionFile . '.session.vim'
     else
         let s:mpsessionfile = g:MP_Path . g:MP_Separator . a:1 . '.session.vim'
     endif
