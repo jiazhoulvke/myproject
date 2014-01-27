@@ -69,48 +69,48 @@ Cscope和GNU Global只能二选其一，假如选择了GNU Global则Cscope不起
 
 ### 四. 相关变量 ###
 
-*g:MP\_ProjectList* 项目列表文件。默认值: globpath($HOME, '.MP_ProjectList.vim')
+**g:MP\_ProjectList** 项目列表文件。默认值: globpath($HOME, '.MP_ProjectList.vim')
 
-*g:MP\_ProjectFile* 项目文件名。默认值: 'project.vim'
+**g:MP\_ProjectFile** 项目文件名。默认值: 'project.vim'
 
-*g:MP\_Window\_Height* 项目列表高度。默认值: '10'
+**g:MP\_Window\_Height** 项目列表高度。默认值: '10'
 
-*g:MP\_Auto\_Close* 选择项目后是否自动关闭项目列表。默认值: 1
+**g:MP\_Auto\_Close** 选择项目后是否自动关闭项目列表。默认值: 1
 
-*g:MP\_Ctags\_Enable* 是否启用ctags。默认值: 0
+**g:MP\_Ctags\_Enable** 是否启用ctags。默认值: 0
 
-*g:MP\_Ctags\_Path* 定义ctags的路径。默认值: 'ctags'
+**g:MP\_Ctags\_Path** 定义ctags的路径。默认值: 'ctags'
 
-*g:MP\_Ctags\_Opt* 定义ctags参数。默认值: ''
+**g:MP\_Ctags\_Opt** 定义ctags参数。默认值: ''
 
-*g:MP\_Global\_Enable* 是否启用GNU global。默认值: 0
+**g:MP\_Global\_Enable** 是否启用GNU global。默认值: 0
 
-*g:MP\_Global\_Path* 定义GNU Global的路径。默认值: 'global'
+**g:MP\_Global\_Path** 定义GNU Global的路径。默认值: 'global'
 
-*g:MP\_Gtags\_Path* 定义gtags的路径。默认值: 'gtags'
+**g:MP\_Gtags\_Path** 定义gtags的路径。默认值: 'gtags'
 
-*g:MP\_Cscope\_Enable* 是否启用cscope。默认值: 0
+**g:MP\_Cscope\_Enable** 是否启用cscope。默认值: 0
 
-*g:MP\_Cscope\_Path* 定义cscope的路径。默认值: 'cscope'
+**g:MP\_Cscope\_Path** 定义cscope的路径。默认值: 'cscope'
 
-*g:MP\_Source\_File\_Ext\_Name* 需要建立tags的文件后缀名,如:'c,h,cpp'。默认值: ''
+**g:MP\_Source\_File\_Ext\_Name** 需要建立tags的文件后缀名,如:'c,h,cpp'。默认值: ''
 
-*g:MP\_ConfigTitleBar\_Enable* 是否允许设置标题栏。默认值: 0
+**g:MP\_ConfigTitleBar\_Enable** 是否允许设置标题栏。默认值: 0
 
-*g:MP\_TitleString* 标题栏字符串。默认值: 
+**g:MP\_TitleString** 标题栏字符串。默认值: 
 
     %t\ %m%r\ [%{expand(\"%:~:.:h\")}]\ [ProjectPath=%{g:MP_Path}]\ -\ %{v:servername}
 
-*g:MP\_Session\_AutoSave* 是否自动保存项目session。默认值: 0
+**g:MP\_Session\_AutoSave** 是否自动保存项目session。默认值: 0
 
-*g:MP\_Session\_AutoLoad* 是否自动加载项目session。默认值: 0
+**g:MP\_Session\_AutoLoad** 是否自动加载项目session。默认值: 0
 
-*g:MP\_DefaultSessionName* 项目默认session文件名。默认值: 'default'
+**g:MP\_DefaultSessionName** 项目默认session文件名。默认值: 'default'
 
-*g:MP\_Session\_Opt* Session选项。默认值: "blank,buffers,curdir,folds,globals,options,resize,tabpages,winpos,winsize"
+**g:MP\_Session\_Opt** Session选项。默认值: "blank,buffers,curdir,folds,globals,options,resize,tabpages,winpos,winsize"
 
-*g:MP\_Path* 项目路径。载入项目时插件会自动修改该变量，请勿手动设置。
+**g:MP\_Path** 项目路径。载入项目时插件会自动修改该变量，请勿手动设置。
 
-*g:MP\_Write\_AutoUpdate* 在文件写入时是否自动更新tags。默认值: 0
+**g:MP\_Write\_AutoUpdate** 在文件写入时是否自动更新tags。默认值: 0
 
-*g:MP\_Bufread\_AutoLoad* 读入文件时是否自动载入项目文件。默认值: 0
+**g:MP\_Bufread\_AutoLoad** 读入文件时是否自动载入项目文件。默认值: 0
