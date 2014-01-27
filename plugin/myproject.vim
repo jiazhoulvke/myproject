@@ -7,10 +7,10 @@
 " Version:      0.3
 "------------------------------------------------
 
-"if exists('g:MP_Loaded')
-"    finish
-"endif
-"let g:MP_Loaded = 1
+if exists('g:MP_Loaded')
+    finish
+endif
+let g:MP_Loaded = 1
 
 "------------------------------------------------
 " Config: 配置选项 {{{1
