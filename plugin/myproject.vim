@@ -328,7 +328,7 @@ function! <SID>MyProject_Key_Map()
     nmap <buffer> d :call <SID>MyProject_Project_Delete()<CR>
     nmap <buffer> <ESC> :close<CR>
     nmap <buffer> c :MPCreate<CR>
-    nmap <buffer> C :MPCreate all<CR>
+    nmap <buffer> C :MPCreate question<CR>
 endfunction
 
 " 通过项目列表载入项目 {{{2
